@@ -1,4 +1,6 @@
-﻿using CasaDoCodigo.Repositories;
+﻿using CasaDoCodigo.Models;
+using CasaDoCodigo.Models.ViewModels;
+using CasaDoCodigo.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -11,11 +13,13 @@ namespace CasaDoCodigo.Controllers
     {
         private IProdutoRepository produtoRepository { get; }
         private IPedidoRepository pedidoRepository { get; }
+        private IItemPedidoRepository itemPedidoRepository { get; }
 
-        public PedidoController(IProdutoRepository produtoRepository, IPedidoRepository pedidoRepository)
+        public PedidoController(IProdutoRepository produtoRepository, IPedidoRepository pedidoRepository, IItemPedidoRepository itemPedidoRepository)
         {
             this.produtoRepository = produtoRepository;
             this.pedidoRepository = pedidoRepository;
+            this.itemPedidoRepository = itemPedidoRepository;
         }
 
         public IActionResult Carrossel()
@@ -30,9 +34,10 @@ namespace CasaDoCodigo.Controllers
                 pedidoRepository.AddItem(codigo);
             }
 
-            var pedido = pedidoRepository.GetPedido();
+            var itens = pedidoRepository.GetPedido().Itens;
+            var carrinhoVM = new CarrinhoViewModel(itens);
 
-            return View(pedido.Itens);
+            return View(carrinhoVM);
         }
 
         public IActionResult Cadastro()
@@ -45,6 +50,12 @@ namespace CasaDoCodigo.Controllers
             var pedido = pedidoRepository.GetPedido();
 
             return View(pedido);
+        }
+
+        [HttpPost]
+        public UpdateQuantidadeResponse UpdateQuantidade([FromBody] ItemPedido itemPedido)
+        {
+            return pedidoRepository.UpdateQuantidade(itemPedido);
         }
     }
 }
