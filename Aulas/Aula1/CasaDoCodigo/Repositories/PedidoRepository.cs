@@ -14,18 +14,21 @@ namespace CasaDoCodigo.Repositories
         Pedido GetPedido();
         void AddItem(string codigo);
         UpdateQuantidadeResponse UpdateQuantidade(ItemPedido itemPedido);
+        Pedido UpdateCadastro(Cadastro cadastro);
     }
 
     public class PedidoRepository : BaseRepository<Pedido>, IPedidoRepository
     {
         private IHttpContextAccessor contextAccessor { get; }
         private IItemPedidoRepository itemPedidoRepository { get; }
+        private ICadastroRepository cadastroRepository { get; }
 
-        public PedidoRepository(ApplicationContext contexto, IHttpContextAccessor contextAccessor, IItemPedidoRepository itemPedidoRepository)
+        public PedidoRepository(ApplicationContext contexto, IHttpContextAccessor contextAccessor, IItemPedidoRepository itemPedidoRepository, ICadastroRepository cadastroRepository)
             : base(contexto)
         {
             this.contextAccessor = contextAccessor;
             this.itemPedidoRepository = itemPedidoRepository;
+            this.cadastroRepository = cadastroRepository;
         }
 
         private int? GetPedidoId()
@@ -42,6 +45,7 @@ namespace CasaDoCodigo.Repositories
         {
             var pedidoId = GetPedidoId();
             var pedido = dbSet
+                .Include(o => o.Cadastro)
                 .Include(o => o.Itens)
                     .ThenInclude(o => o.Produto)
                 .SingleOrDefault(p => p.Id == pedidoId);
@@ -101,6 +105,15 @@ namespace CasaDoCodigo.Repositories
             var carrinhoViewModel = new CarrinhoViewModel(GetPedido().Itens);
 
             return new UpdateQuantidadeResponse(itemPedidoDB, carrinhoViewModel);
+        }
+
+        public Pedido UpdateCadastro(Cadastro cadastro)
+        {
+            var pedido = GetPedido();
+            
+            cadastroRepository.Update(pedido.Cadastro.Id, cadastro);
+
+            return pedido;
         }
     }
 }
